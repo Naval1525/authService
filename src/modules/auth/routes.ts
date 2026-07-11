@@ -1,12 +1,13 @@
 import { Router } from "express";
 import * as controller from "./controller.js";
 import { authenticate } from "./middleware.js";
-
+import { rateLimiter } from "../../core/middleware/ratelimiter.js";
+    
 const router = Router();
 
 // Public
 router.post("/register", controller.register);
-router.post("/login", controller.login);
+router.post("/login",rateLimiter(5, 60), controller.login);
 router.post("/refresh", controller.refresh);
 router.post("/verify-email", controller.verifyEmail);
 router.post("/resend-verification", controller.resendVerification);

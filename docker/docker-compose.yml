@@ -1,0 +1,69 @@
+version: "3.9"
+
+services:
+  auth-service:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+
+    container_name: auth-service
+
+    ports:
+      - "8080:8080"
+
+    env_file:
+      - .env
+
+    # Override the localhost values from .env: inside the compose network the
+    # app reaches the backing services by their service names, not localhost.
+    environment:
+      DATABASE_URL: postgresql://postgres:password@postgres:5432/authdb?schema=public
+      REDIS_URL: redis://redis:6379
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+      redis:
+        condition: service_started
+
+  postgres:
+    image: postgres:16-alpine
+
+    container_name: auth-postgres
+
+    restart: always
+
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: authdb
+
+    ports:
+      - "5432:5432"
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+
+    container_name: auth-redis
+
+    restart: always
+
+    ports:
+      - "6379:6379"
+
+    volumes:
+      - redis_data:/data
+
+volumes:
+  postgres_data:
+  redis_data:
