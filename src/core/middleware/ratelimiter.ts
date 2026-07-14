@@ -15,11 +15,8 @@ export const rateLimiter =
       await redis.expire(key, window);
     }
 
-    if (requests > limit) {
-      return res.status(429).json({
-        success: false,
-        message: "Too many requests. Please try again later.",
-      });
+    if(requests > limit) {
+      return res.status(429).json({ message: "Too many requests" });
     }
 
     next();

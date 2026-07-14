@@ -5,7 +5,7 @@ import { prisma } from "./database/prisma.js";
 import { redis } from "./redis/client.js";
 async function start(){
     await prisma.$connect();
-    await redis.connect();
+    // ioredis auto-connects on construction; no explicit connect() needed.
     app.listen(env.PORT, async () => {
         console.log(`🚀 Server running on port ${env.PORT}`);
         await redis.set("test", "test");

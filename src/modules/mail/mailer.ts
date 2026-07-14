@@ -16,7 +16,7 @@ const transporter = env.SMTP_HOST
     })
   : nodemailer.createTransport({ jsonTransport: true });
 
-type SendMailOptions = {
+export type SendMailOptions = {
   to: string;
   subject: string;
   text: string;

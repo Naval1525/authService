@@ -25,12 +25,11 @@ import {
   REFRESH_TOKEN_TTL_MS,
 } from "./jwt.js";
 import { hashToken, generateRandomToken } from "./token.js";
-import { sendMail } from "../mail/mailer.js";
 import {
-  verificationEmail,
-  passwordResetEmail,
-  passwordChangedEmail,
-} from "../mail/templates.js";
+  enqueueVerificationEmail,
+  enqueuePasswordResetEmail,
+  enqueuePasswordChangedEmail,
+} from "../../jobs/index.js";
 import { RegisterDto } from "./types.js";
 import { LoginDto, ChangePasswordDto } from "./validation.js";
 
@@ -81,8 +80,7 @@ const sendVerificationEmail = async (user: {
     user: { connect: { id: user.id } },
   });
 
-  const mail = verificationEmail(user.name, token);
-  await sendMail({ to: user.email, ...mail });
+  await enqueueVerificationEmail(user.email, user.name, token);
 };
 
 // ---------- core auth ----------
@@ -264,8 +262,7 @@ export const forgotPassword = async (email: string) => {
     user: { connect: { id: user.id } },
   });
 
-  const mail = passwordResetEmail(user.name, token);
-  await sendMail({ to: user.email, ...mail });
+  await enqueuePasswordResetEmail(user.email, user.name, token);
 };
 
 export const resetPassword = async (token: string, password: string) => {
@@ -286,10 +283,9 @@ export const resetPassword = async (token: string, password: string) => {
   await deleteSessionsByUser(record.userId);
 
   try {
-    const mail = passwordChangedEmail(user.name);
-    await sendMail({ to: user.email, ...mail });
+    await enqueuePasswordChangedEmail(user.email, user.name);
   } catch (err) {
-    logger.error({ err }, "Failed to send password changed email");
+    logger.error({ err }, "Failed to enqueue password changed email");
   }
 };
 
@@ -318,9 +314,8 @@ export const changePassword = async (
   await deleteOtherSessions(userId, currentSessionId);
 
   try {
-    const mail = passwordChangedEmail(user.name);
-    await sendMail({ to: user.email, ...mail });
+    await enqueuePasswordChangedEmail(user.email, user.name);
   } catch (err) {
-    logger.error({ err }, "Failed to send password changed email");
+    logger.error({ err }, "Failed to enqueue password changed email");
   }
 };
